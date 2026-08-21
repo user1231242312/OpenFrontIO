@@ -1,6 +1,7 @@
 name: Deploy to InfinityFree
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main # If your default branch is called 'master', change 'main' to 'master'
