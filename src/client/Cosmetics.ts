@@ -325,27 +325,11 @@ export function cosmeticRelationship(
   },
   userMeResponse: UserMeResponse | false,
 ): "owned" | "purchasable" | "blocked" {
-  const flares =
-    userMeResponse === false ? [] : (userMeResponse.player.flares ?? []);
-
-  if (flares.includes(opts.wildcardFlare)) {
-    return "owned";
-  }
-
-  if (flares.includes(opts.requiredFlare)) {
-    return "owned";
-  }
-
-  if (opts.affiliateCode !== opts.itemAffiliateCode) {
-    return "blocked";
-  }
-
-  // Cosmetics are sold for currency only (USD checkout was removed).
-  if (opts.priceSoft !== undefined || opts.priceHard !== undefined) {
-    return "purchasable";
-  }
-
-  return "blocked";
+  // Every bundled cosmetic is available to every player in this free build.
+  // Keep the API shape so existing inventory components render it as selectable.
+  void opts;
+  void userMeResponse;
+  return "owned";
 }
 
 export function patternRelationship(
@@ -354,43 +338,13 @@ export function patternRelationship(
   userMeResponse: UserMeResponse | false,
   affiliateCode: string | null,
 ): "owned" | "purchasable" | "blocked" {
-  if (colorPalette === null) {
-    // For backwards compatibility only show non-colored patterns if they are owned.
-    const flares =
-      userMeResponse === false ? [] : (userMeResponse.player.flares ?? []);
-    if (
-      flares.includes("pattern:*") ||
-      flares.includes(`pattern:${pattern.name}`)
-    ) {
-      return "owned";
-    }
-    return "blocked";
-  }
-
-  if (colorPalette.isArchived) {
-    // Check ownership first — if owned, show it even if archived.
-    const flares =
-      userMeResponse === false ? [] : (userMeResponse.player.flares ?? []);
-    if (
-      flares.includes("pattern:*") ||
-      flares.includes(`pattern:${pattern.name}:${colorPalette.name}`)
-    ) {
-      return "owned";
-    }
-    return "blocked";
-  }
-
-  return cosmeticRelationship(
-    {
-      wildcardFlare: "pattern:*",
-      requiredFlare: `pattern:${pattern.name}:${colorPalette.name}`,
-      priceSoft: pattern.priceSoft,
-      priceHard: pattern.priceHard,
-      affiliateCode,
-      itemAffiliateCode: pattern.affiliateCode ?? null,
-    },
-    userMeResponse,
-  );
+  // Every pattern, including archived and non-palette variants, is available
+  // in the free inventory.
+  void pattern;
+  void colorPalette;
+  void userMeResponse;
+  void affiliateCode;
+  return "owned";
 }
 
 export function flagRelationship(
@@ -662,30 +616,14 @@ export function resolvedToPlayerPattern(
 
 export async function getPlayerCosmeticsRefs(): Promise<PlayerCosmeticRefs> {
   const userSettings = new UserSettings();
-  // Resolve the profile first: getUserMe activates the per-player cosmetics
-  // scope (UserSettings.setPlayerId), which must happen before selections are
-  // read below.
-  await getUserMe();
+  // Cosmetic selections are local in this free distribution. They do not
+  // require an account profile or server-side entitlement lookup.
   const cosmetics = await fetchCosmetics();
-  let pattern: PlayerPattern | null =
+  const pattern: PlayerPattern | null =
     userSettings.getSelectedPatternName(cosmetics);
 
-  if (pattern) {
-    const userMe = await getUserMe();
-    if (userMe) {
-      const flareName =
-        pattern.colorPalette?.name === undefined
-          ? `pattern:${pattern.name}`
-          : `pattern:${pattern.name}:${pattern.colorPalette.name}`;
-      const flares = userMe.player.flares ?? [];
-      const hasWildcard = flares.includes("pattern:*");
-      if (!hasWildcard && !flares.includes(flareName)) {
-        pattern = null;
-      }
-    }
-    if (pattern === null) {
-      userSettings.setSelectedPatternName(undefined);
-    }
+  if (pattern === null) {
+    userSettings.setSelectedPatternName(undefined);
   }
 
   let flag = userSettings.getFlag();
@@ -696,17 +634,6 @@ export async function getPlayerCosmeticsRefs(): Promise<PlayerCosmeticRefs> {
       // Only clear if cosmetics loaded successfully but the key is missing
       if (cosmetics) {
         flag = null;
-      }
-    } else {
-      const userMe = await getUserMe();
-      if (!userMe) {
-        flag = null;
-      } else {
-        const flares = userMe.player.flares ?? [];
-        const hasWildcard = flares.includes("flag:*");
-        if (!hasWildcard && !flares.includes(`flag:${flagData.name}`)) {
-          flag = null;
-        }
       }
     }
   }
@@ -720,15 +647,6 @@ export async function getPlayerCosmeticsRefs(): Promise<PlayerCosmeticRefs> {
     if (cosmetics && !skin) {
       // Cosmetics loaded but the saved skin no longer exists.
       skinName = undefined;
-    } else if (skin) {
-      const userMe = await getUserMe();
-      if (userMe) {
-        const flares = userMe.player.flares ?? [];
-        const hasWildcard = flares.includes("skin:*");
-        if (!hasWildcard && !flares.includes(`skin:${skin.name}`)) {
-          skinName = undefined;
-        }
-      }
     }
     if (skinName === undefined) {
       userSettings.setSelectedPatternName(undefined);
@@ -741,15 +659,6 @@ export async function getPlayerCosmeticsRefs(): Promise<PlayerCosmeticRefs> {
     if (cosmetics && !crown) {
       // Cosmetics loaded but the saved crown no longer exists.
       crownName = undefined;
-    } else if (crown) {
-      const userMe = await getUserMe();
-      if (userMe) {
-        const flares = userMe.player.flares ?? [];
-        const hasWildcard = flares.includes("crown:*");
-        if (!hasWildcard && !flares.includes(`crown:${crown.name}`)) {
-          crownName = undefined;
-        }
-      }
     }
     if (crownName === undefined) {
       userSettings.setSelectedCrownName(undefined);
@@ -768,17 +677,6 @@ export async function getPlayerCosmeticsRefs(): Promise<PlayerCosmeticRefs> {
     if (cosmetics && !effect) {
       userSettings.setSelectedEffectName(slot, undefined);
       continue;
-    }
-    if (effect) {
-      const userMe = await getUserMe();
-      if (userMe) {
-        const flares = userMe.player.flares ?? [];
-        const hasWildcard = flares.includes("effect:*");
-        if (!hasWildcard && !flares.includes(`effect:${effect.name}`)) {
-          userSettings.setSelectedEffectName(slot, undefined);
-          continue;
-        }
-      }
     }
     effects[slot] = name;
   }

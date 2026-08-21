@@ -878,8 +878,6 @@ export class SinglePlayerModal extends BaseModal {
     // rather than the interim generated anon name. Always resolves.
     await usernameInput?.whenSeeded();
 
-    await crazyGamesSDK.requestMidgameAd();
-
     this.dispatchEvent(
       new CustomEvent("join-lobby", {
         detail: {
