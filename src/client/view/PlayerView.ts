@@ -110,7 +110,7 @@ export class PlayerView {
 
   /** Long-lived renderer state — mutated in place by applyUpdate(). */
   public state: PlayerState;
-  /** Static header data — set once at construction, never mutated. */
+  /** Player identity data, updated when control is transferred after respawn. */
   public static: PlayerStatic;
 
   // Assigned via computeColors() in the constructor; re-assignable on theme change.
@@ -270,6 +270,32 @@ export class PlayerView {
    */
   applyUpdate(pu: PlayerUpdate): void {
     applyStateUpdate(this.state, pu);
+    const identityChanged =
+      pu.clientID !== undefined ||
+      pu.name !== undefined ||
+      pu.displayName !== undefined ||
+      pu.clanTag !== undefined ||
+      pu.team !== undefined ||
+      pu.playerType !== undefined ||
+      pu.isLobbyCreator !== undefined;
+    if (pu.clientID !== undefined) this.static.clientID = pu.clientID;
+    if (pu.name !== undefined) this.static.name = pu.name;
+    if (pu.displayName !== undefined) this.static.displayName = pu.displayName;
+    if (pu.clanTag !== undefined) this.static.clanTag = pu.clanTag;
+    if (pu.team !== undefined) this.static.team = pu.team;
+    if (pu.playerType !== undefined) {
+      this.static.playerType = gamePlayerTypeToEnum(pu.playerType);
+    }
+    if (pu.isLobbyCreator !== undefined) {
+      this.static.isLobbyCreator = pu.isLobbyCreator;
+    }
+    if (identityChanged) {
+      this.anonymousName =
+        this.static.clientID === this.game.myClientID()
+          ? this.static.name
+          : createRandomName(this.static.name, this.type());
+      this.computeColors();
+    }
     // applyStateUpdate refreshes outgoingEmojis every tick; re-apply the
     // "Disable emojis" setting so live emojis stay hidden when it's off (#4430).
     if (!userSettings.emojis()) {

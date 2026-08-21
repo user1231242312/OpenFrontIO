@@ -82,4 +82,36 @@ describe("PlayerExecution", () => {
     expect(city.owner()).toBe(otherPlayer);
     expect(city.isActive()).toBe(true);
   });
+
+  test("an eliminated human takes over the first available living bot nation", () => {
+    const unavailableBot = game.addPlayer(
+      new PlayerInfo("unavailable", PlayerType.Bot, null, "unavailable_bot"),
+    );
+    const availableBot = game.addPlayer(
+      new PlayerInfo("available", PlayerType.Bot, null, "available_bot"),
+    );
+    availableBot.conquer(game.ref(70, 70));
+
+    player.conquer(game.ref(60, 60));
+    player.relinquish(game.ref(60, 60));
+    executeTicks(game, 2);
+
+    expect(player.isAlive()).toBe(false);
+    expect(player.clientID()).toBe("client_id1");
+    expect(unavailableBot.type()).toBe(PlayerType.Bot);
+    expect(availableBot.type()).toBe(PlayerType.Human);
+    expect(availableBot.clientID()).toBe("client_id1");
+    expect(game.playerByClientID("client_id1")).toBe(availableBot);
+    expect(game.stats().getPlayerStats(player)?.killedAt).toBeDefined();
+  });
+
+  test("an eliminated human remains eliminated when no living bot is available", () => {
+    player.conquer(game.ref(60, 60));
+    player.relinquish(game.ref(60, 60));
+    executeTicks(game, 2);
+
+    expect(player.isAlive()).toBe(false);
+    expect(player.clientID()).toBe("client_id1");
+    expect(game.playerByClientID("client_id1")).toBe(player);
+  });
 });

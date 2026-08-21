@@ -1,4 +1,4 @@
-﻿import { Execution, Game, Player, Structures } from "../game/Game";
+﻿import { Execution, Game, Player, PlayerType, Structures } from "../game/Game";
 import { PseudoRandom } from "../PseudoRandom";
 import { simpleHash } from "../Util";
 import { AllianceExtensionExecution } from "./alliance/AllianceExtensionExecution";
@@ -36,6 +36,11 @@ export class TribeExecution implements Execution {
   }
 
   tick(ticks: number) {
+    if (this.tribe.type() !== PlayerType.Bot || !this.tribe.isAlive()) {
+      // Control was transferred to a human, or the tribe has been eliminated.
+      this.active = false;
+      return;
+    }
     if (ticks % this.attackRate !== this.attackTick) return;
 
     if (!this.tribe.isAlive()) {

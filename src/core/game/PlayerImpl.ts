@@ -157,9 +157,9 @@ export class PlayerImpl implements Player {
   constructor(
     private mg: GameImpl,
     private _smallID: number,
-    private readonly playerInfo: PlayerInfo,
+    private playerInfo: PlayerInfo,
     startTroops: number,
-    private readonly _team: Team | null,
+    private _team: Team | null,
   ) {
     this._troops = toInt(startTroops);
     this._gold = mg.config().startingGold(playerInfo);
@@ -371,6 +371,27 @@ export class PlayerImpl implements Player {
   }
   clientID(): ClientID | null {
     return this.playerInfo.clientID;
+  }
+
+  /**
+   * Makes this bot player controllable by an eliminated human while retaining
+   * the bot nation's map identity, territory, and units.
+   */
+  claimControlFrom(eliminated: PlayerImpl): void {
+    const clientID = eliminated.clientID();
+    if (clientID === null) {
+      throw new Error(
+        "Cannot transfer control from a player without a client ID",
+      );
+    }
+
+    this.playerInfo = new PlayerInfo(
+      this.playerInfo.name,
+      PlayerType.Human,
+      clientID,
+      this.playerInfo.id,
+    );
+    this._team = eliminated.team();
   }
 
   id(): PlayerID {

@@ -699,14 +699,36 @@ export class GameImpl implements Game {
   }
 
   playerByClientID(id: ClientID): Player | null {
-    for (const [, player] of this._players) {
-      if (player.clientID() === id) {
-        return player;
-      }
+    let deadPlayer: Player | null = null;
+    for (const player of this._players.values()) {
+      if (player.clientID() !== id) continue;
+      if (player.isAlive()) return player;
+      deadPlayer ??= player;
     }
-    return null;
+    return deadPlayer;
   }
+  respawnAsAvailableBot(player: Player): Player | null {
+    if (
+      !(player instanceof PlayerImpl) ||
+      player.type() !== PlayerType.Human ||
+      player.isAlive()
+    ) {
+      return null;
+    }
 
+    const availableBot = Array.from(this._players.values()).find(
+      (candidate) =>
+        candidate.type() === PlayerType.Bot &&
+        candidate.isAlive() &&
+        candidate.clientID() === null,
+    );
+    if (availableBot === undefined) {
+      return null;
+    }
+
+    availableBot.claimControlFrom(player);
+    return availableBot;
+  }
   isOnMap(cell: Cell): boolean {
     return (
       cell.x >= 0 &&
@@ -765,8 +787,10 @@ export class GameImpl implements Game {
     this.updateBorders(tile);
     this._map.setFallout(tile, false);
     this.recordTileUpdate(tile);
+    if (previousOwner.isPlayer() && !previousOwner.isAlive()) {
+      this.respawnAsAvailableBot(previousOwner);
+    }
   }
-
   relinquish(tile: TileRef) {
     if (!this.hasOwner(tile)) {
       throw new Error(`Cannot relinquish tile because it is unowned`);
@@ -783,6 +807,9 @@ export class GameImpl implements Game {
     this._map.setOwnerID(tile, 0);
     this.updateBorders(tile);
     this.recordTileUpdate(tile);
+    if (!previousOwner.isAlive()) {
+      this.respawnAsAvailableBot(previousOwner);
+    }
   }
 
   // Reusable neighbor buffer to avoid closures/allocation in updateBorders.

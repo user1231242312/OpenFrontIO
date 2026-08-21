@@ -459,7 +459,7 @@ export class GameView implements GameMap {
     }
 
     if (this._myClientID) {
-      this._myPlayer ??= this.playerByClientID(this._myClientID);
+      this._myPlayer = this.playerByClientID(this._myClientID);
     }
 
     for (const unit of this._units.values()) {
@@ -1053,10 +1053,13 @@ export class GameView implements GameMap {
   }
 
   playerByClientID(id: ClientID): PlayerView | null {
-    const player =
-      Array.from(this._players.values()).filter(
-        (p) => p.clientID() === id,
-      )[0] ?? null;
+    let deadPlayer: PlayerView | null = null;
+    for (const player of this._players.values()) {
+      if (player.clientID() !== id) continue;
+      if (player.isAlive()) return player;
+      deadPlayer ??= player;
+    }
+    const player = deadPlayer;
     if (player === null) {
       return null;
     }

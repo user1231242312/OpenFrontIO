@@ -760,6 +760,12 @@ export interface Game extends GameMap {
   allPlayers(): Player[];
   playerByClientID(id: ClientID): Player | null;
   playerBySmallID(id: number): Player | TerraNullius;
+  /**
+   * Transfers an eliminated human player's control to a living unclaimed bot,
+   * if one is available. Returns the controlled bot or null when no transfer
+   * can be made.
+   */
+  respawnAsAvailableBot(player: Player): Player | null;
   hasPlayer(id: PlayerID): boolean;
   addPlayer(playerInfo: PlayerInfo): Player;
   terraNullius(): TerraNullius;

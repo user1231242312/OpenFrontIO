@@ -1070,12 +1070,16 @@ export class ClientGameRunner {
     if (this.gameView.inSpawnPhase()) {
       return;
     }
-    if (this.myPlayer === null) {
+    if (
+      this.myPlayer?.clientID() !== this.clientID ||
+      !this.myPlayer?.isAlive()
+    ) {
       if (!this.clientID) return;
       const myPlayer = this.gameView.playerByClientID(this.clientID);
       if (myPlayer === null) return;
       this.myPlayer = myPlayer;
     }
+    if (this.myPlayer === null) return;
     this.myPlayer.actions(tile, [UnitType.TransportShip]).then((actions) => {
       if (actions.canAttack) {
         this.eventBus.emit(
@@ -1105,12 +1109,16 @@ export class ClientGameRunner {
 
     const tile = this.gameView.ref(cell.x, cell.y);
 
-    if (this.myPlayer === null) {
+    if (
+      this.myPlayer?.clientID() !== this.clientID ||
+      !this.myPlayer?.isAlive()
+    ) {
       if (!this.clientID) return;
       const myPlayer = this.gameView.playerByClientID(this.clientID);
       if (myPlayer === null) return;
       this.myPlayer = myPlayer;
     }
+    if (this.myPlayer === null) return;
 
     if (this.gameView.inSpawnPhase()) {
       return;
@@ -1202,12 +1210,16 @@ export class ClientGameRunner {
       return;
     }
 
-    if (this.myPlayer === null) {
+    if (
+      this.myPlayer?.clientID() !== this.clientID ||
+      !this.myPlayer?.isAlive()
+    ) {
       if (!this.clientID) return;
       const myPlayer = this.gameView.playerByClientID(this.clientID);
       if (myPlayer === null) return;
       this.myPlayer = myPlayer;
     }
+    if (this.myPlayer === null) return;
 
     this.myPlayer
       .buildables(tile, [UnitType.TransportShip])
@@ -1228,12 +1240,16 @@ export class ClientGameRunner {
       return;
     }
 
-    if (this.myPlayer === null) {
+    if (
+      this.myPlayer?.clientID() !== this.clientID ||
+      !this.myPlayer?.isAlive()
+    ) {
       if (!this.clientID) return;
       const myPlayer = this.gameView.playerByClientID(this.clientID);
       if (myPlayer === null) return;
       this.myPlayer = myPlayer;
     }
+    if (this.myPlayer === null) return;
 
     this.myPlayer.actions(tile, null).then((actions) => {
       if (actions.canAttack) {
@@ -1252,12 +1268,16 @@ export class ClientGameRunner {
       return;
     }
 
-    if (this.myPlayer === null) {
+    if (
+      this.myPlayer?.clientID() !== this.clientID ||
+      !this.myPlayer?.isAlive()
+    ) {
       if (!this.clientID) return;
       const myPlayer = this.gameView.playerByClientID(this.clientID);
       if (myPlayer === null) return;
       this.myPlayer = myPlayer;
     }
+    if (this.myPlayer === null) return;
 
     const incomingAttacks = this.myPlayer.incomingAttacks().filter((a) => {
       const t = (
@@ -1286,12 +1306,16 @@ export class ClientGameRunner {
     const tile = this.getTileUnderCursor();
     if (tile === null) return;
 
-    if (this.myPlayer === null) {
+    if (
+      this.myPlayer?.clientID() !== this.clientID ||
+      !this.myPlayer?.isAlive()
+    ) {
       if (!this.clientID) return;
       const myPlayer = this.gameView.playerByClientID(this.clientID);
       if (myPlayer === null) return;
       this.myPlayer = myPlayer;
     }
+    if (this.myPlayer === null) return;
 
     const myPlayer = this.myPlayer;
 
@@ -1314,12 +1338,16 @@ export class ClientGameRunner {
     const tile = this.getTileUnderCursor();
     if (tile === null) return;
 
-    if (this.myPlayer === null) {
+    if (
+      this.myPlayer?.clientID() !== this.clientID ||
+      !this.myPlayer?.isAlive()
+    ) {
       if (!this.clientID) return;
       const myPlayer = this.gameView.playerByClientID(this.clientID);
       if (myPlayer === null) return;
       this.myPlayer = myPlayer;
     }
+    if (this.myPlayer === null) return;
 
     const myPlayer = this.myPlayer;
 
