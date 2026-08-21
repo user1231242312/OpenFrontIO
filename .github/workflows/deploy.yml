@@ -13,10 +13,33 @@ jobs:
       - name: Get latest code
         uses: actions/checkout@v4
 
-      - name: Sync files to InfinityFree
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production site
+        run: npm run build-prod
+
+      - name: Render static HTML shell
+        env:
+          GAME_ENV: prod
+          NUM_WORKERS: "1"
+          TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY || '1x00000000000000000000AA' }}
+          DOMAIN: ${{ vars.DEPLOY_DOMAIN || 'openfront.gamer.free' }}
+          GIT_COMMIT: ${{ github.sha }}
+          CDN_BASE: ""
+        run: npx tsx src/server/RenderStaticIndex.ts > static/index.rendered.html && mv static/index.rendered.html static/index.html
+
+      - name: Sync production site to InfinityFree
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./static/
           server-dir: /htdocs/
