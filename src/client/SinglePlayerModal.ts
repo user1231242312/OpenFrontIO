@@ -23,7 +23,6 @@ import "./components/GameConfigSettings";
 import { MEDAL_ORDER, medalIcon } from "./components/map/Medals";
 import "./components/ToggleInputCard";
 import { modalHeader } from "./components/ui/ModalHeader";
-import { getPlayerCosmetics } from "./Cosmetics";
 import { crazyGamesSDK } from "./CrazyGamesSDK";
 import { JoinLobbyEvent } from "./Main";
 import { UsernameInput } from "./UsernameInput";
@@ -892,7 +891,10 @@ export class SinglePlayerModal extends BaseModal {
                 clientID,
                 username: usernameInput.getUsername(),
                 clanTag: usernameInput.getClanTag() ?? null,
-                cosmetics: await getPlayerCosmetics(),
+                // Offline solo games deliberately do not depend on the
+                // account/cosmetics API. The local server accepts an empty
+                // cosmetic selection and the player can still play normally.
+                cosmetics: {},
               },
             ],
             config: {

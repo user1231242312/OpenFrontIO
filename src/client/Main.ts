@@ -907,7 +907,12 @@ class Client {
     if (lobby.source !== "public") {
       this.updateJoinUrlForShare(lobby.gameID);
     }
-    const auth = await userAuth();
+    // Single-player matches are coordinated by LocalServer in the browser.
+    // Do not make their launch dependent on the remote auth/API services.
+    const isOfflineSolo =
+      lobby.source === "singleplayer" ||
+      lobby.gameStartInfo?.config.gameType === GameType.Singleplayer;
+    const auth = isOfflineSolo ? false : await userAuth();
     const playerRole = auth !== false ? (auth.claims.role ?? null) : null;
     // Ensure the one-shot Steam name-seed has settled before reading
     // getUsername(), mirroring how getClanCheck() runs in parallel with the
@@ -916,11 +921,15 @@ class Client {
     await this.usernameInput?.whenSeeded();
     const newLobbyHandle = joinLobby(this.eventBus, {
       gameID: lobby.gameID,
-      cosmetics: await getPlayerCosmeticsRefs(),
-      turnstileToken: await this.getTurnstileToken(lobby),
+      cosmetics: isOfflineSolo ? {} : await getPlayerCosmeticsRefs(),
+      turnstileToken: isOfflineSolo
+        ? null
+        : await this.getTurnstileToken(lobby),
       playerName: this.usernameInput?.getUsername() ?? genAnonUsername(),
       playerClanTag: this.usernameInput?.getClanTag() ?? null,
-      clanTagCheck: this.usernameInput?.getClanCheck(),
+      clanTagCheck: isOfflineSolo
+        ? undefined
+        : this.usernameInput?.getClanCheck(),
       playerRole,
       gameStartInfo:
         lobby.gameStartInfo ??
