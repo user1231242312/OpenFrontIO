@@ -53,7 +53,9 @@ export type Intent =
   | KickPlayerIntent
   | TogglePauseIntent
   | UpdateGameConfigIntent
-  | ToggleGameStartTimer;
+  | ToggleGameStartTimer
+  | AdminGrantResourcesIntent
+  | AdminJumpscareIntent;
 
 export type AttackIntent = z.infer<typeof AttackIntentSchema>;
 export type CancelAttackIntent = z.infer<typeof CancelAttackIntentSchema>;
@@ -90,6 +92,10 @@ export type UpdateGameConfigIntent = z.infer<
 export type ToggleGameStartTimer = z.infer<
   typeof ToggleGameStartTimerIntentSchema
 >;
+export type AdminGrantResourcesIntent = z.infer<
+  typeof AdminGrantResourcesIntentSchema
+>;
+export type AdminJumpscareIntent = z.infer<typeof AdminJumpscareIntentSchema>;
 
 export type Turn = z.infer<typeof TurnSchema>;
 export type GameConfig = z.infer<typeof GameConfigSchema>;
@@ -108,6 +114,7 @@ export type ClientMessage =
 export type ServerMessage =
   | ServerTurnMessage
   | ServerStartGameMessage
+  | ServerAdminJumpscareMessage
   | ServerPingMessage
   | ServerDesyncMessage
   | ServerPrestartMessage
@@ -118,6 +125,9 @@ export type ServerMessage =
 export type ServerTurnMessage = z.infer<typeof ServerTurnMessageSchema>;
 export type ServerStartGameMessage = z.infer<
   typeof ServerStartGameMessageSchema
+>;
+export type ServerAdminJumpscareMessage = z.infer<
+  typeof ServerAdminJumpscareMessageSchema
 >;
 export type ServerPingMessage = z.infer<typeof ServerPingMessageSchema>;
 export type ServerDesyncMessage = z.infer<typeof ServerDesyncSchema>;
@@ -655,6 +665,18 @@ export const ToggleGameStartTimerIntentSchema = z.object({
   type: z.literal("toggle_game_start_timer"),
 });
 
+// Admin-only intents are authorized by GameServer from the authenticated
+// connection role. The browser may request them but cannot grant itself access.
+export const AdminGrantResourcesIntentSchema = z.object({
+  type: z.literal("admin_grant_resources"),
+  targetClientID: ID,
+});
+
+export const AdminJumpscareIntentSchema = z.object({
+  type: z.literal("admin_jumpscare"),
+  targetClientID: ID,
+});
+
 export const IntentSchema = z.discriminatedUnion("type", [
   AttackIntentSchema,
   CancelAttackIntentSchema,
@@ -681,6 +703,8 @@ export const IntentSchema = z.discriminatedUnion("type", [
   TogglePauseIntentSchema,
   UpdateGameConfigIntentSchema,
   ToggleGameStartTimerIntentSchema,
+  AdminGrantResourcesIntentSchema,
+  AdminJumpscareIntentSchema,
 ]);
 
 // StampedIntent = Intent with server-stamped clientID (used in turns and execution)
@@ -854,6 +878,12 @@ export const ServerStartGameMessageSchema = z.object({
   // The clientID assigned to this connection by the server.
   // Absent for replays where the viewer has no player identity.
   myClientID: ID.optional(),
+  // Server-derived authorization state for privileged UI controls.
+  isAdmin: z.boolean().optional(),
+});
+
+export const ServerAdminJumpscareMessageSchema = z.object({
+  type: z.literal("admin_jumpscare"),
 });
 
 export const ServerDesyncSchema = z.object({
@@ -890,6 +920,7 @@ export const ServerMessageSchema = z.discriminatedUnion("type", [
   ServerTurnMessageSchema,
   ServerPrestartMessageSchema,
   ServerStartGameMessageSchema,
+  ServerAdminJumpscareMessageSchema,
   ServerPingMessageSchema,
   ServerDesyncSchema,
   ServerErrorSchema,

@@ -7,6 +7,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { WebSocket, WebSocketServer } from "ws";
 import { z } from "zod";
+import { isAdminRole } from "../core/ApiSchemas";
 import { GameEnv } from "../core/configuration/Config";
 import { GameType } from "../core/game/Game";
 import {
@@ -652,12 +653,20 @@ export async function startWorker() {
           });
         }
 
+        // Resolve any username allowlist only after the API has authenticated
+        // the account. Client-supplied join names never grant authority.
+        const role =
+          isAdminRole(claims?.role) ||
+          ServerEnv.isAdminUsername(accountUsername?.username)
+            ? "admin"
+            : (claims?.role ?? null);
+
         // Create client and add to game
         const client = new Client(
           generateID(),
           persistentId,
           claims,
-          claims?.role ?? null,
+          role,
           flares,
           ip,
           username,

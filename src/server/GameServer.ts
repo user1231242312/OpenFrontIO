@@ -666,6 +666,51 @@ export class GameServer {
         return finish({ status: 200 });
       }
 
+      case "admin_jumpscare": {
+        if (!actor.isAdmin) {
+          return finish({ status: 403, error: "admin role required" });
+        }
+        const target = this.activeClients.find(
+          (client) => client.clientID === stamped.targetClientID,
+        );
+        if (target === undefined || target.spectator) {
+          return finish({ status: 404, error: "target player not found" });
+        }
+        if (target.ws.readyState !== WebSocket.OPEN) {
+          return finish({
+            status: 409,
+            error: "target player is disconnected",
+          });
+        }
+        target.ws.send(JSON.stringify({ type: "admin_jumpscare" }));
+        this.log.info("admin jumpscare sent", {
+          gameID: this.id,
+          adminClientID: actor.clientID,
+          targetClientID: target.clientID,
+        });
+        return finish({ status: 200 });
+      }
+
+      case "admin_grant_resources": {
+        if (!actor.isAdmin) {
+          return finish({ status: 403, error: "admin role required" });
+        }
+        const target = this.activeClients.find(
+          (client) => client.clientID === stamped.targetClientID,
+        );
+        if (target === undefined || target.spectator) {
+          return finish({ status: 404, error: "target player not found" });
+        }
+        if (!this.hasStarted()) {
+          return finish({ status: 409, error: "game not started" });
+        }
+        if (this.isPaused) {
+          return finish({ status: 409, error: "game is paused" });
+        }
+        this.addIntent(stamped);
+        return finish({ status: 200 });
+      }
+
       case "toggle_pause": {
         if (!actor.isLobbyCreator && !actor.isAdminBot) {
           return finish({
@@ -1581,6 +1626,7 @@ export class GameServer {
           ),
           lobbyCreatedAt: this.createdAt,
           myClientID: client.clientID,
+          isAdmin: isAdminRole(client.role),
         } satisfies ServerStartGameMessage),
       );
     } catch (error) {

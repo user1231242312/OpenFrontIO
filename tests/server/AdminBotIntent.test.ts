@@ -231,3 +231,90 @@ describe("GameServer.handleIntent (admin bot)", () => {
     });
   });
 });
+
+describe("GameServer.handleIntent (interactive admin controls)", () => {
+  let mockLogger: any;
+
+  beforeEach(() => {
+    mockLogger = {
+      child: vi.fn().mockReturnThis(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    };
+  });
+
+  function makeGame() {
+    return new GameServer("admin-controls", mockLogger, Date.now(), {
+      gameType: GameType.Private,
+    } as any);
+  }
+
+  const ADMIN_ACTOR = {
+    clientID: "admin-client",
+    isLobbyCreator: false,
+    isAdmin: true,
+    isAdminBot: false,
+  };
+  const PLAYER_ACTOR = {
+    clientID: "player-client",
+    isLobbyCreator: false,
+    isAdmin: false,
+    isAdminBot: false,
+  };
+
+  function addConnectedTarget(game: GameServer) {
+    const target = {
+      clientID: "target-client",
+      spectator: false,
+      ws: { readyState: 1, send: vi.fn() },
+    };
+    (game as any).activeClients.push(target);
+    return target;
+  }
+
+  it("rejects a non-admin jumpscare request", () => {
+    const game = makeGame();
+    addConnectedTarget(game);
+
+    expect(
+      game.handleIntent(
+        { type: "admin_jumpscare", targetClientID: "target-client" },
+        PLAYER_ACTOR,
+      ),
+    ).toEqual({ status: 403, error: "admin role required" });
+  });
+
+  it("sends a jumpscare only to the selected connected player", () => {
+    const game = makeGame();
+    const target = addConnectedTarget(game);
+
+    expect(
+      game.handleIntent(
+        { type: "admin_jumpscare", targetClientID: "target-client" },
+        ADMIN_ACTOR,
+      ),
+    ).toEqual({ status: 200 });
+    expect(target.ws.send).toHaveBeenCalledWith(
+      JSON.stringify({ type: "admin_jumpscare" }),
+    );
+  });
+
+  it("queues an admin resource refill only after the game starts", () => {
+    const game = makeGame();
+    addConnectedTarget(game);
+    (game as any)._hasStarted = true;
+
+    expect(
+      game.handleIntent(
+        { type: "admin_grant_resources", targetClientID: "target-client" },
+        ADMIN_ACTOR,
+      ),
+    ).toEqual({ status: 200 });
+    expect((game as any).intents).toContainEqual({
+      type: "admin_grant_resources",
+      targetClientID: "target-client",
+      clientID: "admin-client",
+    });
+  });
+});

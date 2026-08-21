@@ -34,6 +34,7 @@ import {
   UserSettings,
 } from "../core/game/UserSettings";
 import { WorkerClient } from "../core/worker/WorkerClient";
+import { AdminPanel, showAdminJumpscare } from "./AdminPanel";
 import { getPersistentID } from "./Auth";
 import { showInGameAlert } from "./InGameModal";
 import {
@@ -740,6 +741,7 @@ async function createClientGame(
 
 export class ClientGameRunner {
   private myPlayer: PlayerView | null = null;
+  private adminPanel: AdminPanel | null = null;
   private isActive = false;
 
   private turnsSeen = 0;
@@ -876,6 +878,7 @@ export class ClientGameRunner {
         this.eventBus.emit(new SendHashEvent(hu.tick, hu.hash));
       });
       this.gameView.update(gu);
+      this.adminPanel?.updateTargets();
       this.webglBuilder?.update(this.gameView);
       this.renderer.tick();
 
@@ -902,6 +905,9 @@ export class ClientGameRunner {
       this.lastMessageTime = Date.now();
       if (message.type === "start") {
         console.log("starting game! in client game runner");
+        if (message.isAdmin && this.adminPanel === null) {
+          this.adminPanel = new AdminPanel(this.gameView, this.transport);
+        }
 
         if (this.gameView.config().isRandomSpawn()) {
           const goToPlayer = () => {
@@ -949,6 +955,9 @@ export class ClientGameRunner {
           this.worker.sendTurn(turn);
           this.turnsSeen++;
         }
+      }
+      if (message.type === "admin_jumpscare") {
+        showAdminJumpscare();
       }
       if (message.type === "desync") {
         if (this.lobby.gameStartInfo === undefined) {
@@ -1027,6 +1036,9 @@ export class ClientGameRunner {
   }
 
   public stop() {
+    this.adminPanel?.dispose();
+    this.adminPanel = null;
+    document.getElementById("openfront-admin-jumpscare")?.remove();
     this.soundManager.dispose();
     this.graphicsListenerAbort?.abort();
     this.disposeRenderer?.();

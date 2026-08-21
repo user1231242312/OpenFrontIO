@@ -698,6 +698,14 @@ export class Transport {
     this.sendIntent({ type: "toggle_game_start_timer" });
   }
 
+  public sendAdminGrantResources(targetClientID: string): void {
+    this.sendIntent({ type: "admin_grant_resources", targetClientID });
+  }
+
+  public sendAdminJumpscare(targetClientID: string): void {
+    this.sendIntent({ type: "admin_jumpscare", targetClientID });
+  }
+
   private sendIntent(intent: Intent) {
     if (this.isLocal || this.socket?.readyState === WebSocket.OPEN) {
       const msg = {

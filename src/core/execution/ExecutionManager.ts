@@ -2,6 +2,7 @@ import { Execution, Game } from "../game/Game";
 import { PseudoRandom } from "../PseudoRandom";
 import { ClientID, GameID, StampedIntent, Turn } from "../Schemas";
 import { simpleHash } from "../Util";
+import { AdminGrantResourcesExecution } from "./AdminGrantResourcesExecution";
 import { AllianceExtensionExecution } from "./alliance/AllianceExtensionExecution";
 import { AllianceRejectExecution } from "./alliance/AllianceRejectExecution";
 import { AllianceRequestExecution } from "./alliance/AllianceRequestExecution";
@@ -135,6 +136,12 @@ export class Executor {
         return new MarkDisconnectedExecution(player, intent.isDisconnected);
       case "toggle_pause":
         return new PauseExecution(player, intent.paused);
+      case "admin_grant_resources":
+        return new AdminGrantResourcesExecution(intent.targetClientID);
+      // Delivered directly by GameServer to the target client; this message
+      // never enters the deterministic turn queue.
+      case "admin_jumpscare":
+        return new NoOpExecution();
       default:
         throw new Error(`intent type ${intent} not found`);
     }

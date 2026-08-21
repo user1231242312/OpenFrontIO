@@ -4,6 +4,10 @@ import { GameEnv, parseGameEnv } from "../core/configuration/Config";
 import { GameID } from "../core/Schemas";
 import { generateID, simpleHash } from "../core/Util";
 
+// The requested local administrator. This is matched only against the API's
+// authenticated account username; ADMIN_USERNAMES can override or extend it.
+const DEFAULT_ADMIN_USERNAMES = ["BenH#3674"];
+
 const JwksSchema = z.object({
   keys: z
     .object({
@@ -177,6 +181,26 @@ export class ServerEnv {
   }
   static adminBotHeader(): string {
     return "x-admin-bot-key";
+  }
+  /**
+   * Comma-separated account usernames that receive the admin role after the
+   * API has authenticated the account. This is intentionally server-only and
+   * is never derived from the client-supplied join name.
+   */
+  static adminUsernames(): string[] {
+    const raw = process.env.ADMIN_USERNAMES;
+    if (raw === undefined) return DEFAULT_ADMIN_USERNAMES;
+    return raw
+      .split(",")
+      .map((name) => name.trim())
+      .filter((name) => name.length > 0);
+  }
+  static isAdminUsername(username: string | null | undefined): boolean {
+    return (
+      username !== undefined &&
+      username !== null &&
+      ServerEnv.adminUsernames().includes(username)
+    );
   }
   static allowedFlares(): string[] | undefined {
     const raw = process.env.ALLOWED_FLARES;
