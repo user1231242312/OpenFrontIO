@@ -33,7 +33,6 @@ import { GameModeSelector } from "./GameModeSelector";
 import { GameStartingModal } from "./GameStartingModal";
 import "./GameStatsModal";
 import { HelpModal } from "./HelpModal";
-import "./HomepagePromos";
 import { HostLobbyModal as HostPrivateLobbyModal } from "./HostLobbyModal";
 import { showInGameConfirm } from "./InGameModal";
 import "./InventoryModal";
@@ -973,7 +972,6 @@ class Client {
         "change-username-modal",
         "subscription-modal",
         "lang-selector",
-        "homepage-promos",
       ].forEach((tag) => {
         const modal = document.querySelector(tag) as HTMLElement & {
           close?: () => void;

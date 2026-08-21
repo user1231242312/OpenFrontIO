@@ -23,7 +23,6 @@ import {
 import {
   changeSubscriptionTier,
   createCheckoutSession,
-  getApiBase,
   getUserMe,
   invalidateUserMe,
   purchaseWithCurrency,
@@ -264,7 +263,7 @@ export async function fetchCosmetics(): Promise<Cosmetics | null> {
   }
   const request = (async () => {
     try {
-      const response = await fetch(`${getApiBase()}/cosmetics.json`);
+      const response = await fetch(assetUrl("cosmetics/cosmetics.json"));
       if (!response.ok) {
         console.error(`HTTP error! status: ${response.status}`);
         return null;
